@@ -35,6 +35,10 @@ function formatScore(n: number): string {
   return Math.round(Number(n) || 0).toLocaleString("en-US");
 }
 
+function formatBalance(n: number): string {
+  return (Number(n) || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
 function stripAt(input: string): string {
   return input.trim().replace(/^@+/, "").trim();
 }
@@ -102,6 +106,16 @@ export default function Home() {
 
   const [copied, setCopied] = useState(false);
   const scanRef = useRef<HTMLDivElement | null>(null);
+
+  // Wallet holdings checker (fully independent from the X scan/leaderboard).
+  const [wallet, setWallet] = useState("");
+  const [walletChecking, setWalletChecking] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [walletResult, setWalletResult] = useState<{
+    walletAddress: string;
+    balance: number;
+    isHolder: boolean;
+  } | null>(null);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -175,6 +189,35 @@ export default function Home() {
       );
     } finally {
       setScanning(false);
+    }
+  }
+
+  async function handleWalletSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const addr = wallet.trim();
+    if (!addr || walletChecking) return;
+
+    setWalletChecking(true);
+    setWalletError(null);
+    setWalletResult(null);
+
+    try {
+      const res = await fetch("/api/wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: addr }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `Check failed (HTTP ${res.status})`);
+      }
+      setWalletResult(data);
+    } catch (err) {
+      setWalletError(
+        err instanceof Error ? err.message : "Something went wrong. Try again."
+      );
+    } finally {
+      setWalletChecking(false);
     }
   }
 
@@ -429,6 +472,81 @@ export default function Home() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Wallet holdings checker — standalone, independent of the X scan */}
+        <div className="pb-2">
+          <div className="relative">
+            <div
+              aria-hidden
+              className="absolute inset-0 translate-x-[8px] translate-y-[8px] bg-[#ecece9]"
+            />
+            <div className="relative border-[3px] border-[#ecece9] bg-[#0a0a0a] p-4 sm:p-5">
+              <form onSubmit={handleWalletSubmit}>
+                <label
+                  htmlFor="wallet"
+                  className="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-[#7a7972]"
+                >
+                  Check Your Bags
+                </label>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="flex flex-1 items-center border-2 border-[#ecece9] bg-[#050505] px-3">
+                    <input
+                      id="wallet"
+                      type="text"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      value={wallet}
+                      onChange={(e) => setWallet(e.target.value)}
+                      placeholder="Solana wallet address"
+                      className="w-full bg-transparent py-3 font-num text-base text-[#ecece9] placeholder-[#5f5e5a] outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={walletChecking || !wallet.trim()}
+                    className="border-2 border-[#ecece9] bg-[#ecece9] px-4 py-3 font-display text-sm uppercase tracking-wider text-[#050505] hover:bg-[#050505] hover:text-[#ecece9] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {walletChecking ? "Checking…" : "Check My Bags"}
+                  </button>
+                </div>
+
+                {walletChecking && (
+                  <p className="mt-3 flex items-center gap-2 text-sm text-[#7a7972]">
+                    <span className="inline-block h-3 w-3 border-2 border-[#5f5e5a] border-t-[#ecece9] motion-safe:animate-spin" />
+                    Checking on-chain balance…
+                  </p>
+                )}
+
+                {walletError && (
+                  <p className="mt-3 border border-[#7a7972] px-3 py-2 text-sm text-[#ecece9]">
+                    {walletError}
+                  </p>
+                )}
+              </form>
+
+              {walletResult && !walletChecking && (
+                <div className="mt-4 border-t border-[#24241f] pt-4">
+                  <div className="font-num text-4xl font-bold text-[#5dcaa5]">
+                    {formatBalance(walletResult.balance)}
+                  </div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#7a7972]">
+                    $ANSEM held
+                  </div>
+                  <div
+                    className={`mt-3 inline-flex items-center border-2 px-3 py-1.5 text-sm font-bold uppercase tracking-wider ${
+                      walletResult.isHolder
+                        ? "border-[#00e676] bg-[#00e676] text-[#050505]"
+                        : "border-[#7a7972] text-[#7a7972]"
+                    }`}
+                  >
+                    {walletResult.isHolder ? "Holder" : "Not holding yet"}
+                  </div>
                 </div>
               )}
             </div>
