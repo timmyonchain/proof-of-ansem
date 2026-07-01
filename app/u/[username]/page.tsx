@@ -17,14 +17,20 @@ function clean(raw: string): string {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ wallet?: string }>;
 }): Promise<Metadata> {
   const { username: raw } = await params;
   const username = clean(raw);
+  const { wallet } = await searchParams;
 
-  const cardUrl = `${SITE_URL}/api/card/${encodeURIComponent(username)}`;
-  const pageUrl = `${SITE_URL}/u/${encodeURIComponent(username)}`;
+  const walletQuery = wallet ? `?wallet=${encodeURIComponent(wallet)}` : "";
+  const cardUrl = `${SITE_URL}/api/card/${encodeURIComponent(
+    username
+  )}${walletQuery}`;
+  const pageUrl = `${SITE_URL}/u/${encodeURIComponent(username)}${walletQuery}`;
   const title = `@${username}'s $ANSEM Mindshare Score`;
   const description = `See @${username}'s standing on the Proof of Ansem — The Black Bull mindshare leaderboard.`;
 

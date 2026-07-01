@@ -116,6 +116,8 @@ export default function Home() {
     balance: number;
     isHolder: boolean;
   } | null>(null);
+  // Last successfully-checked wallet this session — appended to card/share URLs.
+  const [checkedWallet, setCheckedWallet] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -212,6 +214,7 @@ export default function Home() {
         throw new Error(data?.error || `Check failed (HTTP ${res.status})`);
       }
       setWalletResult(data);
+      if (data?.walletAddress) setCheckedWallet(data.walletAddress);
     } catch (err) {
       setWalletError(
         err instanceof Error ? err.message : "Something went wrong. Try again."
@@ -234,6 +237,11 @@ export default function Home() {
   function scrollToScan() {
     scanRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  // Appended to card/share URLs when a wallet has been checked this session.
+  const walletQuery = checkedWallet
+    ? `?wallet=${encodeURIComponent(checkedWallet)}`
+    : "";
 
   return (
     <main className="relative min-h-screen bg-[#050505] text-[#ecece9]">
@@ -431,7 +439,9 @@ export default function Home() {
                       {/* Card preview */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`/api/card/${encodeURIComponent(result.username)}`}
+                        src={`/api/card/${encodeURIComponent(
+                          result.username
+                        )}${walletQuery}`}
                         alt="Your $ANSEM mindshare card"
                         width={1200}
                         height={630}
@@ -443,7 +453,7 @@ export default function Home() {
                         <a
                           href={`/api/card/${encodeURIComponent(
                             result.username
-                          )}`}
+                          )}${walletQuery}`}
                           download={`ansem-${result.username}.png`}
                           className="inline-flex items-center justify-center gap-2 border-2 border-[#ecece9] px-4 py-2 text-sm font-bold uppercase tracking-wider text-[#ecece9] hover:bg-[#ecece9] hover:text-[#050505]"
                         >
@@ -461,7 +471,7 @@ export default function Home() {
                           )}&url=${encodeURIComponent(
                             `${SITE_URL}/u/${encodeURIComponent(
                               result.username
-                            )}`
+                            )}${walletQuery}`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"

@@ -1,7 +1,10 @@
-import { ImageResponse } from "@vercel/og";
+import { ImageResponse } from "next/og";
 import { Redis } from "@upstash/redis";
+import { checkWalletHoldings } from "@/lib/checkWallet";
 
-export const runtime = "edge";
+// nodejs (not edge) so we can reuse checkWalletHoldings, which relies on
+// Node-oriented modules. ImageResponse works in both runtimes.
+export const runtime = "nodejs";
 
 // Static TTFs (satori needs real font buffers, not CSS font-family).
 const FONT_GOTHIC =
@@ -61,7 +64,23 @@ export async function GET(
     // leave defaults
   }
 
-  const origin = new URL(request.url).origin;
+  const url = new URL(request.url);
+  const origin = url.origin;
+
+  // --- optional wallet holdings (only when ?wallet= is present) ---
+  const walletParam = url.searchParams.get("wallet");
+  let walletBalance: number | null = null;
+  if (walletParam) {
+    try {
+      const w = await checkWalletHoldings(walletParam);
+      if (w && !w.error && typeof w.balance === "number") {
+        walletBalance = w.balance;
+      }
+    } catch {
+      // ignore — omit the wallet section rather than break the card
+    }
+  }
+
   const [gothic, monoR, monoB, bull] = await Promise.all([
     fetchFont(FONT_GOTHIC),
     fetchFont(FONT_MONO_R),
@@ -70,6 +89,14 @@ export async function GET(
   ]);
 
   const fmtScore = Math.round(score).toLocaleString("en-US");
+  const fmtBalance =
+    walletBalance != null
+      ? Number(walletBalance).toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+        })
+      : null;
+  // When holdings are shown, compact the layout so everything fits in 630px.
+  const hasWallet = fmtBalance !== null;
 
   return new ImageResponse(
     (
@@ -89,7 +116,7 @@ export async function GET(
             display: "flex",
             flexDirection: "column",
             flex: 1,
-            justifyContent: "space-between",
+            justifyContent: hasWallet ? "flex-start" : "space-between",
           }}
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -131,7 +158,7 @@ export async function GET(
             <div
               style={{
                 display: "flex",
-                marginTop: "46px",
+                marginTop: hasWallet ? "22px" : "46px",
                 color: "#7A7972",
                 fontSize: "30px",
               }}
@@ -145,7 +172,7 @@ export async function GET(
                 color: "#5DCAA5",
                 fontFamily: "Mono",
                 fontWeight: 700,
-                fontSize: "120px",
+                fontSize: hasWallet ? "86px" : "120px",
                 lineHeight: "1",
               }}
             >
@@ -166,7 +193,7 @@ export async function GET(
             <div
               style={{
                 display: "flex",
-                marginTop: "30px",
+                marginTop: hasWallet ? "14px" : "30px",
                 alignItems: "center",
               }}
             >
@@ -201,10 +228,51 @@ export async function GET(
                 </div>
               )}
             </div>
+
+            {/* optional: $ANSEM wallet holdings */}
+            {fmtBalance !== null && (
+              <div
+                style={{
+                  display: "flex",
+                  marginTop: "10px",
+                  alignItems: "baseline",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    color: "#5DCAA5",
+                    fontFamily: "Mono",
+                    fontWeight: 700,
+                    fontSize: "40px",
+                  }}
+                >
+                  {fmtBalance}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    marginLeft: "14px",
+                    color: "#7A7972",
+                    fontSize: "22px",
+                    letterSpacing: "2px",
+                  }}
+                >
+                  $ANSEM HELD
+                </div>
+              </div>
+            )}
           </div>
 
           {/* credit */}
-          <div style={{ display: "flex", color: "#5F5E5A", fontSize: "22px" }}>
+          <div
+            style={{
+              display: "flex",
+              marginTop: hasWallet ? "12px" : "0px",
+              color: "#5F5E5A",
+              fontSize: "22px",
+            }}
+          >
             built by @xshephrd
           </div>
         </div>
