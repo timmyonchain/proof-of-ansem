@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --black: #050505;
+  --offwhite: #ecece9;
+  --grey: #7a7972;
+  --grey-dim: #5f5e5a;
+  --green: #5dcaa5;
+  --hairline: #24241f;
+}
+
+@theme inline {
+  --color-black: var(--black);
+  --color-offwhite: var(--offwhite);
+  --color-grey: var(--grey);
+  --color-greydim: var(--grey-dim);
+  --color-green: var(--green);
+  --color-hairline: var(--hairline);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  background: var(--black);
+  color: var(--offwhite);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Heavy black-weight display font for headers */
+.font-display {
+  font-family: "Arial Black", "Arial Narrow Bold", "Helvetica Neue", Arial,
+    sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* Blackletter/gothic display — hero headline only */
+.font-gothic {
+  font-family: var(--font-gothic), "Pirata One", serif;
+  font-weight: 400;
+}
+
+/* Monospace for all numbers / data — ledger/terminal feel */
+.font-num {
+  font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Roboto Mono",
+    Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Monochrome hard focus outline, no glow */
+:focus-visible {
+  outline: 2px solid var(--offwhite);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--offwhite);
+  color: var(--black);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
