@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-// @ts-expect-error — JS module without type declarations
 import { getLeaderboard, getLeaderboardCount } from "@/lib/leaderboard";
 
 export const runtime = "nodejs";

@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-// @ts-expect-error — JS module without type declarations
 import { scanUser } from "@/lib/scanUser";
-// @ts-expect-error — JS module without type declarations
 import { redis } from "@/lib/redis";
 
 // Needs Node.js APIs (crypto, node-fetch, @upstash/redis) and must never be

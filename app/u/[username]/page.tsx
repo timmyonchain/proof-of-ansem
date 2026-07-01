@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-// @ts-expect-error — JS module without type declarations
 import { getUserResult } from "@/lib/leaderboard";
 
 export const runtime = "nodejs";
