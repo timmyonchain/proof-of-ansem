@@ -36,6 +36,10 @@ yarn-error.log*
 # run artifacts (saved leaderboard JSON from batch runs)
 /results/
 
+# local tool config (skills / Claude Code)
+.agents/
+.claude/
+
 # vercel
 .vercel
 
