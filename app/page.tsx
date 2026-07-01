@@ -266,7 +266,7 @@ export default function Home() {
               alt="The Black Bull charging forward through dust"
               width={1080}
               height={1440}
-              className="mx-auto h-auto w-full mix-blend-screen"
+              className="mx-auto h-auto w-full object-contain mix-blend-screen sm:max-h-[70vh]"
             />
           </div>
         </section>
